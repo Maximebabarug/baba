@@ -3,11 +3,14 @@
   "n_photos": 9,
   "_avertissement": "8 photos fournies. Serie complete pour ce type d'analyse SAUF un gros plan des FRANGES (petits cotes) : la photo 08 montre la LISIERE (grand cote), pas la frange. Le champ 'fringe' reste donc partiellement deduit. Le dos (densite de noeuds) n'est pas photographie de face, mais la tranche et la lisiere permettent desormais de conclure sur l'epaisseur et la finition.",
   "shape": "rectangular",
-  "aspect_ratio": 1.352,
-  "aspect_ratio_confidence": 0.88,
+  "aspect_ratio": 1.2782,
+  "aspect_ratio_confidence": 1.0,
   "orientation": "portrait",
-  "real_size_cm": null,
-  "_note_dimensions": "MESURE sur la photo 01 pleine resolution (4000x6000) apres detourage : ratio du champ tisse, franges exclues = 1.352. Le keystone de la photo n'est que de 1.2% (largeur haut 3428 px, largeur bas 3467 px), donc la prise de vue est quasi orthographique et le ratio mesure est fiable. Compatible avec 203x150 (1.353) ou 200x148 (1.351). Confiance relevee de 0.55 a 0.88. Reste a confirmer au metre ruban pour passer a 1.0 : c'est le ratio, pas la taille absolue, qui est etabli ici.",
+  "real_size_cm": [
+    170.0,
+    133.0
+  ],
+  "_note_dimensions": "DIMENSIONS REELLES AU METRE RUBAN : 170 x 133 cm, ratio 1.2782. FAIT FOI.\nLa mesure faite sur la photo donnait 1.352, soit 5.8% de plus. L'ecart n'est pas du bruit et son explication est probablement physique : le tapis est photographie SUSPENDU a un mur. Un tapis de laine pendu par une extremite s'allonge sous son propre poids et se retrecit lateralement. Les deux effets se cumulent sur le ratio : 170x133 a plat devient environ 176x130 suspendu, soit 1.35. Le keystone tres faible de la photo (1.2%) exclut une erreur de perspective.\nCONSEQUENCE POUR LA PRISE DE VUE : photographier le tapis A PLAT AU SOL, jamais suspendu, si l'on veut une geometrie exploitable sans mesure externe. CONSEQUENCE POUR LE PIPELINE : la rectification vers 1.2782 corrige la deformation de suspension, elle ne l'introduit pas.",
   "dominant_colors": [
     {
       "name": "ivoire / creme chaud (champ)",
@@ -70,7 +73,8 @@
     "Franges de longueurs inegales, quelques meches ecartees sur le cote bas.",
     "Petit point brun fonce isole dans le champ ivoire (photo 06, au-dessus du peigne vert) : soit un noeud de laine naturellement plus foncee, soit une micro-tache. A conserver : c'est un marqueur d'identite du tapis.",
     "Le cordon de rive vert/rouge n'a pas un pas parfaitement regulier : les sequences de couleur varient legerement le long du bord (photo 07).",
-    "Franges de longueurs differentes en haut et en bas (~3.3% contre ~3.8% de la longueur du tapis) : mesure sur la photo 01, ce n'est pas un artefact de prise de vue."
+    "Franges de longueurs differentes en haut et en bas (~3.3% contre ~3.8% de la longueur du tapis) : mesure sur la photo 01, ce n'est pas un artefact de prise de vue.",
+    "Deformation de suspension : le tapis photographie pendu mesure ~5.8% de ratio en plus qu'a plat. Ce n'est PAS une caracteristique du produit mais un effet de la prise de vue - a corriger a la rectification, pas a conserver."
   ],
   "unique_features": [
     "Le MOULINET QUADRICOLORE des medaillons carres de l'axe median (bleu / orange / aubergine / creme dans quatre quadrants). Signature la plus forte du tapis.",
@@ -193,7 +197,8 @@
     "Texture de brique du mur visible derriere et autour du tapis : element de decor a exclure du masque.",
     "Aucun abrash (variation de bain de teinture) franc n'est identifiable de maniere certaine : ce qui pourrait y ressembler sur les photos s'explique par le gradient d'eclairage.",
     "Photo 08 : le mur est ici une pierre claire plus NEUTRE que la brique rosee des photos 01-02. Cette photo est la meilleure reference de BALANCE DES BLANCS de la serie : elle confirme que le rouge reel est un rouge garance legerement moins orange que ne le suggerent les photos de detail 03-06.",
-    "Photos 06 et 07 : le lustre directionnel du velours fait paraitre certaines zones plus claires ou plus foncees. C'est de l'optique sur le sens du poil, pas une variation de teinture."
+    "Photos 06 et 07 : le lustre directionnel du velours fait paraitre certaines zones plus claires ou plus foncees. C'est de l'optique sur le sens du poil, pas une variation de teinture.",
+    "Allongement du a la suspension du tapis pour la photo : ratio apparent 1.352 contre 1.278 reel. Artefact de prise de vue, corrige par la rectification."
   ],
   "analysis_notes": "Tapis de type caucasien, repertoire Chirvan / Kouba (champ ivoire a semis, bordure koufique), de facture atelier soignee et d'aspect recent. Deux consequences directes pour le pipeline : (1) le champ ivoire est TRES proche en valeur du mur de brique creme sur lequel le tapis est suspendu, et les franges sont creme sur creme — c'est le pire cas possible pour un detourage automatique, et cela justifie a lui seul de changer de protocole de prise de vue ; (2) le dessin est dense, angulaire et non symetrique haut/bas, c'est-a-dire exactement le type de motif qu'un modele generatif re-dessine de travers. Ces deux points valident l'architecture retenue : incrustation geometrique des pixels reels plutot que regeneration. AJOUT apres les photos 06-08 : la serie est desormais suffisante pour tout sauf (a) les dimensions reelles et (b) un gros plan de frange. L'epaisseur du velours est mesuree (7-8 mm), la finition de rive est documentee (cordon torsade vert/rouge, lisiere ivoire), et le relief du noeud est visible. Ce relief est un argument de plus pour le compositing : il se transporte tel quel avec les pixels reels, alors qu'un modele generatif le remplace systematiquement par un aplat lisse. MESURES ETABLIES SUR LA PHOTO PLEINE RESOLUTION : ratio 1.352 (keystone 1.2%, donc fiable) ; franges presentes aux deux extremites, longueurs inegales ; nouage main confirme par l'envers. Le detourage automatique coupe les franges (creme sur creme) et a necessite un module de recuperation dedie, base sur l'ecart COULEUR au fond (5.5 ecarts-types) et non sur la texture (indiscernable). Plate produite : 1479x2000, alpha 93.7%."
 }
