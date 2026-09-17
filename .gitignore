@@ -3,9 +3,17 @@ __pycache__/
 .venv/
 venv/
 .env
-data/
-!data/.gitkeep
 *.sqlite3
 .pytest_cache/
 .DS_Store
 out/
+
+# Les SORTIES du pipeline ne sont pas versionnees...
+data/*/plate.png
+data/*/lifestyle_*.png
+data/*/export/
+data/*/report.json
+
+# ...mais les PHOTOS SOURCES et le RUG DNA le sont.
+!photos/
+!data/*/rug_dna.json
