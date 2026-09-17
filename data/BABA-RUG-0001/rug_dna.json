@@ -1,13 +1,13 @@
 {
   "product_id": "BABA-RUG-0001",
-  "n_photos": 8,
+  "n_photos": 9,
   "_avertissement": "8 photos fournies. Serie complete pour ce type d'analyse SAUF un gros plan des FRANGES (petits cotes) : la photo 08 montre la LISIERE (grand cote), pas la frange. Le champ 'fringe' reste donc partiellement deduit. Le dos (densite de noeuds) n'est pas photographie de face, mais la tranche et la lisiere permettent desormais de conclure sur l'epaisseur et la finition.",
   "shape": "rectangular",
-  "aspect_ratio": 1.3,
-  "aspect_ratio_confidence": 0.55,
+  "aspect_ratio": 1.352,
+  "aspect_ratio_confidence": 0.88,
   "orientation": "portrait",
   "real_size_cm": null,
-  "_note_dimensions": "Ratio mesure a l'ecran sur la photo 1 (frontale) : champ + bordures ~1.27, franges comprises ~1.33. Compatible avec un format courant 200x150 (1.33) ou 195x150 (1.30). CONFIANCE MOYENNE : la photo 1 a un leger keystone (tapis suspendu, appareil legerement en contre-plongee). Fournir les dimensions reelles au metre ruban leve completement cette incertitude et doit etre fait avant toute production.",
+  "_note_dimensions": "MESURE sur la photo 01 pleine resolution (4000x6000) apres detourage : ratio du champ tisse, franges exclues = 1.352. Le keystone de la photo n'est que de 1.2% (largeur haut 3428 px, largeur bas 3467 px), donc la prise de vue est quasi orthographique et le ratio mesure est fiable. Compatible avec 203x150 (1.353) ou 200x148 (1.351). Confiance relevee de 0.55 a 0.88. Reste a confirmer au metre ruban pour passer a 1.0 : c'est le ratio, pas la taille absolue, qui est etabli ici.",
   "dominant_colors": [
     {
       "name": "ivoire / creme chaud (champ)",
@@ -56,9 +56,9 @@
   "border_description": "SEPT bandes concentriques, de l'exterieur vers l'interieur : (1) lisiere etroite a fond rouge portant une alternance de petits glyphes — losanges, chevrons, triangles, barres — en bleu, vert, creme et or ; (2) fin cordon torsade vert et rouge (liage de rive) ; (3) BORDURE PRINCIPALE, la plus large : fond rouge garance charge de grandes formes 'koufiques' angulaires en ivoire et bleu marine (meandres crochus type grecque/svastika stylisee), ponctuees de petits triangles verts et de losanges ; (4) etroit galon a damier or/jaune et multicolore ; (5) bordure mineure a fond bleu marine portant un chapelet de petites rosettes circulaires creme, rouges, bleues et vertes, regulierement espacees ; (6) bande rouge a meandre crochu reciproque bleu marine et ivoire ; (7) filet interieur : fine ligne dentelee (dents de scie) bleu marine au contact du champ ivoire. CONFIRME par les photos 06 et 07. La finition de rive est un cordon torsade VERT ET ROUGE alternes, surjete a la main, visible sur toute la longueur du grand cote (photo 07). La lisiere elle-meme est surjetee en laine IVOIRE (photo 08).",
   "central_motif": "PAS de medaillon central unique. Le centre du tapis est occupe par une repetition de l'axe vertical decrit ci-dessus. Le motif le plus identifiant est le petit medaillon carre a MOULINET QUADRICOLORE (quatre quadrants : bleu, orange/or, violet-aubergine, creme) encadre de rouge, de vert et de bleu marine, present environ 4 fois sur l'axe median. C'est ce detail, visible en photo 4, qui doit servir de test de fidelite prioritaire : un generateur qui 'invente' le tapis ne reproduira jamais ce moulinet a quatre couleurs asymetriques.",
   "repetition": "Environ 4 repetitions verticales completes du couple (losange a peignes / medaillon a moulinet) sur l'axe median, et 4 rangees d'octogones crochus de chaque cote. Symetrie bilaterale gauche-droite bonne mais NON parfaite. Symetrie haut-bas ABSENTE : le dessin du champ est interrompu differemment en haut et en bas (le tisserand a manque de place en fin d'ouvrage) — voir irregularites.",
-  "fringe": "Franges ivoire/creme sur les DEUX petits cotes (haut et bas), issues des fils de chaine. Longueur estimee 8 a 12 cm, nouees en petits faisceaux a la base. Aspect irregulier et naturel : brins de longueurs inegales, quelques meches ecartees, legere ondulation. DEDUIT : aucun gros plan de frange n'a ete fourni ; longueur et mode de nouage a confirmer.",
+  "fringe": "Franges ivoire/creme aux DEUX petits cotes, issues des fils de chaine, precedees d'un galon tisse a points serres. MESURE sur la photo 01 : longueur ~158 px en haut et ~182 px en bas pour un tapis de 4753 px de long, soit environ 3.3% et 3.8% de la longueur -- de l'ordre de 7 a 8 cm si le tapis fait 203 cm. Brins de longueurs inegales, quelques meches ecartees. Les deux franges n'ont pas la meme longueur : irregularite reelle, a conserver.",
   "texture": "Velours de laine noue main, mi-ras, dense et regulier. La photo 06 en vue oblique montre clairement le RELIEF : les motifs se lisent en marches d'escalier de la taille d'un noeud, les diagonales sont crenelees et jamais lisses, et le velours accroche la lumiere en donnant un lustre directionnel marque. C'est precisement ce qu'un rendu genere ne reproduit pas : il lisse les diagonales et perd le crenelage.",
-  "material_guess": "Velours de laine sur trame apparemment coton ou laine brun-gris (visible a la tranche, photo 08, et a la base du pli, photo 07). Lisiere surjetee en laine ivoire. Teintures franches et stables. Le dos n'ayant pas ete photographie de face, la densite de noeuds au dm2 reste non chiffrable.",
+  "material_guess": "Velours de laine sur trame brun-gris. L'envers de la bordure (photo 09) montre le motif entierement lisible et les rangees de noeuds individuellement : NOUAGE MAIN CONFIRME. Lisiere surjetee en laine ivoire, liage de rive en cordon torsade vert et rouge. Densite de noeuds non chiffrable sans vue de dos a plat avec une reference d'echelle.",
   "pile_height": "Mi-ras, 7 a 8 mm, MESURE sur le profil de la photo 08 (tranche contre le mur) et coherent avec l'epaisseur au pli de la photo 07. N'est plus une deduction.",
   "wear": "TRES FAIBLE, voire nulle. Contrairement a l'hypothese habituelle sur un tapis d'Orient, ce tapis ne presente PAS de patine marquee : velours plein, couleurs vives et homogenes, pas de zone lustree ni de corrosion des bruns, pas de reparation ni de trou visible, franges intactes, lisieres saines et cordon de rive complet sans reprise (photos 07 et 08). Il faut le dire clairement, car toute generation qui ajouterait de l'usure, de la decoloration ou un aspect 'vintage' produirait un AUTRE tapis. Il s'agit selon toute vraisemblance d'une piece recente ou peu utilisee, de facture atelier soignee.",
   "irregularities": [
@@ -69,7 +69,8 @@
     "Coin inferieur gauche legerement plus large / retombant que le coin inferieur droit sur la photo 1.",
     "Franges de longueurs inegales, quelques meches ecartees sur le cote bas.",
     "Petit point brun fonce isole dans le champ ivoire (photo 06, au-dessus du peigne vert) : soit un noeud de laine naturellement plus foncee, soit une micro-tache. A conserver : c'est un marqueur d'identite du tapis.",
-    "Le cordon de rive vert/rouge n'a pas un pas parfaitement regulier : les sequences de couleur varient legerement le long du bord (photo 07)."
+    "Le cordon de rive vert/rouge n'a pas un pas parfaitement regulier : les sequences de couleur varient legerement le long du bord (photo 07).",
+    "Franges de longueurs differentes en haut et en bas (~3.3% contre ~3.8% de la longueur du tapis) : mesure sur la photo 01, ce n'est pas un artefact de prise de vue."
   ],
   "unique_features": [
     "Le MOULINET QUADRICOLORE des medaillons carres de l'axe median (bleu / orange / aubergine / creme dans quatre quadrants). Signature la plus forte du tapis.",
@@ -169,6 +170,17 @@
       "color_cast": "neutre a legerement chaud, mur en pierre claire",
       "usable_as_plate": false,
       "notes": "Profil net de la tranche contre le mur. Lisiere surjetee en laine IVOIRE sur toute la hauteur ; sous le velours, la trame apparait brun-gris. Permet de mesurer l'epaisseur du velours : ~7-8 mm."
+    },
+    {
+      "filename": "09_envers_bordure.jpg",
+      "view": "back",
+      "shows_full_rug": false,
+      "rug_coverage": 0.9,
+      "perspective_severity": 0.45,
+      "sharpness": 0.92,
+      "color_cast": "chaud",
+      "usable_as_plate": false,
+      "notes": "Tapis replie : envers de la bordure principale a cote de l'endroit du champ. Le motif koufique est parfaitement LISIBLE au revers, rangees de noeuds visibles une a une : confirmation directe du nouage main (un tapis tufte ou machine ne montre pas cela). Ce n'est pas une vue de dos a plat : la densite de noeuds au dm2 reste non chiffrable."
     }
   ],
   "plate_photo": "01_face.jpg",
@@ -183,5 +195,5 @@
     "Photo 08 : le mur est ici une pierre claire plus NEUTRE que la brique rosee des photos 01-02. Cette photo est la meilleure reference de BALANCE DES BLANCS de la serie : elle confirme que le rouge reel est un rouge garance legerement moins orange que ne le suggerent les photos de detail 03-06.",
     "Photos 06 et 07 : le lustre directionnel du velours fait paraitre certaines zones plus claires ou plus foncees. C'est de l'optique sur le sens du poil, pas une variation de teinture."
   ],
-  "analysis_notes": "Tapis de type caucasien, repertoire Chirvan / Kouba (champ ivoire a semis, bordure koufique), de facture atelier soignee et d'aspect recent. Deux consequences directes pour le pipeline : (1) le champ ivoire est TRES proche en valeur du mur de brique creme sur lequel le tapis est suspendu, et les franges sont creme sur creme — c'est le pire cas possible pour un detourage automatique, et cela justifie a lui seul de changer de protocole de prise de vue ; (2) le dessin est dense, angulaire et non symetrique haut/bas, c'est-a-dire exactement le type de motif qu'un modele generatif re-dessine de travers. Ces deux points valident l'architecture retenue : incrustation geometrique des pixels reels plutot que regeneration. AJOUT apres les photos 06-08 : la serie est desormais suffisante pour tout sauf (a) les dimensions reelles et (b) un gros plan de frange. L'epaisseur du velours est mesuree (7-8 mm), la finition de rive est documentee (cordon torsade vert/rouge, lisiere ivoire), et le relief du noeud est visible. Ce relief est un argument de plus pour le compositing : il se transporte tel quel avec les pixels reels, alors qu'un modele generatif le remplace systematiquement par un aplat lisse."
+  "analysis_notes": "Tapis de type caucasien, repertoire Chirvan / Kouba (champ ivoire a semis, bordure koufique), de facture atelier soignee et d'aspect recent. Deux consequences directes pour le pipeline : (1) le champ ivoire est TRES proche en valeur du mur de brique creme sur lequel le tapis est suspendu, et les franges sont creme sur creme — c'est le pire cas possible pour un detourage automatique, et cela justifie a lui seul de changer de protocole de prise de vue ; (2) le dessin est dense, angulaire et non symetrique haut/bas, c'est-a-dire exactement le type de motif qu'un modele generatif re-dessine de travers. Ces deux points valident l'architecture retenue : incrustation geometrique des pixels reels plutot que regeneration. AJOUT apres les photos 06-08 : la serie est desormais suffisante pour tout sauf (a) les dimensions reelles et (b) un gros plan de frange. L'epaisseur du velours est mesuree (7-8 mm), la finition de rive est documentee (cordon torsade vert/rouge, lisiere ivoire), et le relief du noeud est visible. Ce relief est un argument de plus pour le compositing : il se transporte tel quel avec les pixels reels, alors qu'un modele generatif le remplace systematiquement par un aplat lisse. MESURES ETABLIES SUR LA PHOTO PLEINE RESOLUTION : ratio 1.352 (keystone 1.2%, donc fiable) ; franges presentes aux deux extremites, longueurs inegales ; nouage main confirme par l'envers. Le detourage automatique coupe les franges (creme sur creme) et a necessite un module de recuperation dedie, base sur l'ecart COULEUR au fond (5.5 ecarts-types) et non sur la texture (indiscernable). Plate produite : 1479x2000, alpha 93.7%."
 }

@@ -144,19 +144,81 @@ def mask_quality(mask: np.ndarray, image_bgr: np.ndarray) -> tuple[float, list[s
         if len(areas) > 1 and areas[1] > 0.10 * areas[0]:
             problems.append("plusieurs zones detachees : le detourage a pris du decor")
 
-    # Contraste entre le tapis et ce qui l'entoure : c'est ce qui conditionne
-    # la reussite du detourage des franges.
+    # Contraste global tapis/fond : utile pour detecter un detourage impossible.
+    contrast = 1.0
     k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (31, 31))
     outside = (cv2.dilate(mask, k) > 127) & (mask <= 127)
     inside = mask > 127
-    contrast = 1.0
     if outside.any() and inside.any():
         g = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
         contrast = abs(float(g[inside].mean()) - float(g[outside].mean())) / 255.0
         if contrast < 0.09:
-            problems.append(
-                f"contraste tapis/fond tres faible ({contrast:.2f}) : les franges seront "
-                "perdues. Rephotographier sur un fond contrastant."
-            )
+            problems.append(f"contraste tapis/fond tres faible ({contrast:.2f})")
+
+    # Franges : c'est la RUGOSITE du bord qu'il faut mesurer, pas le contraste.
+    # Un test de contraste compare le corps du tapis a ce qui l'entoure et reste
+    # excellent meme quand les franges ont ete coupees -- sur BABA-RUG-0001 il
+    # notait le masque 1.00 alors que les DEUX franges manquaient. Un tapis
+    # frange a une silhouette en peigne sur ses petits cotes ; un masque coupe
+    # net a un bord rectiligne. La difference se mesure directement.
+    rough = edge_roughness(mask)
+    if rough is not None and max(rough) < 0.004:
+        problems.append(
+            f"bords des petits cotes rectilignes (rugosite {max(rough):.4f}) : "
+            "si ce tapis a des franges, elles ont ete coupees par le detourage. "
+            "Lancer la recuperation de franges."
+        )
+
     score = max(0.0, min(1.0, 1.0 - 0.3 * len(problems))) * min(1.0, contrast / 0.18)
     return score, problems
+
+
+def edge_roughness(mask: np.ndarray) -> tuple[float, float] | None:
+    """Rugosite du contour sur les deux PETITS cotes, en fraction de la longueur.
+
+    Pour chaque colonne du tapis redresse, on releve la position du bord haut et
+    du bord bas du masque, puis on prend l'ecart-type de ces positions. Un bord
+    coupe au rasoir donne ~0 ; une frange, dont les brins sont de longueurs
+    inegales, donne une valeur nettement superieure. C'est le signal direct de
+    la presence -- ou de l'absence -- de franges dans un masque.
+    """
+    cnts, _ = cv2.findContours((mask > 127).astype(np.uint8), cv2.RETR_EXTERNAL,
+                               cv2.CHAIN_APPROX_SIMPLE)
+    if not cnts:
+        return None
+    (cx, cy), (rw, rh), angle = cv2.minAreaRect(max(cnts, key=cv2.contourArea))
+    if rw < rh:
+        rw, rh, angle = rh, rw, angle + 90
+
+    # Redresse le masque : le grand axe devient horizontal. Le canevas de sortie
+    # doit etre dimensionne pour le tapis REDRESSE -- garder la taille d'origine
+    # rogne les extremites d'un tapis portrait tourne de 90 deg, et l'ecart-type
+    # du bord tombe alors a zero, ce qui simule un bord parfaitement droit.
+    pad = int(max(rw, rh) * 0.08) + 20
+    out_w, out_h = int(rw) + 2 * pad, int(rh) + 2 * pad
+    M = cv2.getRotationMatrix2D((cx, cy), angle, 1.0)
+    M[0, 2] += out_w / 2.0 - cx
+    M[1, 2] += out_h / 2.0 - cy
+    rot = cv2.warpAffine(mask, M, (out_w, out_h), flags=cv2.INTER_NEAREST)
+    ys, xs = np.nonzero(rot > 127)
+    if len(xs) < 100:
+        return None
+
+    # Apres rotation le tapis est horizontal : ses PETITS cotes sont a gauche et
+    # a droite, donc on suit la position extreme en x pour chaque ligne y.
+    order = np.argsort(ys)
+    ys, xs = ys[order], xs[order]
+    bounds = np.searchsorted(ys, np.arange(ys.min(), ys.max() + 2))
+    left, right = [], []
+    for i in range(len(bounds) - 1):
+        a, b = bounds[i], bounds[i + 1]
+        if b - a < 3:
+            continue
+        row = xs[a:b]
+        left.append(row.min())
+        right.append(row.max())
+    if len(left) < 20:
+        return None
+    span = max(rw, 1.0)
+    trim = slice(len(left) // 10, -len(left) // 10 or None)  # ignore les coins
+    return (float(np.std(left[trim]) / span), float(np.std(right[trim]) / span))

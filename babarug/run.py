@@ -17,6 +17,7 @@ import numpy as np
 from babarug.models import RugDNA, Verdict
 from babarug.pipeline.export import build_filename, export_jpeg
 from babarug.pipeline.loop import RenderSettings, render_variant
+from babarug.pipeline.fringes import recover_fringes
 from babarug.pipeline.plate import extract_plate, pick_plate_photo
 from babarug.providers.registry import get_generation, get_segmentation, get_vision
 from babarug.providers.segmentation import mask_quality
@@ -106,6 +107,26 @@ def run_product(
         raise ValueError(f"photo illisible : {plate_name}")
 
     mask = seg.segment_rug(img)
+
+    # Les franges sont systematiquement perdues par un detourage generique quand
+    # elles sont de la couleur du fond. On tente de les recuperer avant de juger
+    # le masque : sans elles, la plate coupe le tapis net et le rendu final
+    # montre un tapis sans franges -- alteration produit inacceptable.
+    if dna.fringe and "aucune" not in dna.fringe.lower():
+        fr = recover_fringes(img, mask)
+        rep.warnings += [f"franges : {n}" for n in fr.notes]
+        if fr.found:
+            gain = (fr.mask > 127).sum() / max((mask > 127).sum(), 1) - 1
+            step(f"    franges recuperees (+{gain:.1%} de surface, "
+                 f"separation {fr.separation:.1f} ecart-type)")
+            mask = fr.mask
+        else:
+            rep.needs_human = True
+            rep.warnings.append(
+                "FRANGES NON RECUPEREES : le RUG DNA en decrit, le detourage n'en "
+                "trouve pas. Le rendu montrera un tapis coupe net."
+            )
+
     score, problems = mask_quality(mask, img)
     for p in problems:
         rep.warnings.append(f"detourage ({plate_name}) : {p}")
