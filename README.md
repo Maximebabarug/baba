@@ -35,8 +35,8 @@ python -m babarug.cli batch shooting_2026_09/
 # Analyse seule (RUG DNA), sans générer d'image
 python -m babarug.cli dna BABA-RUG-0001 photos/BABA-RUG-0001/ --size 200x150
 
-# Sans aucune clé API : la chaîne tourne, le décor est schématique
-python -m babarug.cli run BABA-RUG-0001 photos/ --generation offline --no-review
+# Sans aucune clé API — mode par défaut : décor de studio fabriqué par le code
+python -m babarug.cli run BABA-RUG-0001 photos/BABA-RUG-0001/ --size 170x133
 ```
 
 ### Options utiles
@@ -45,10 +45,21 @@ python -m babarug.cli run BABA-RUG-0001 photos/ --generation offline --no-review
 |---|---|
 | `--size 200x150` | dimensions réelles en cm — **fiabilise les proportions** |
 | `--style parisien_contemporain --room salon` | impose les scènes (sinon « surprends-moi ») |
-| `--generation gemini\|flux\|offline` | choix du générateur de décor |
+| `--generation studio\|library\|gemini\|flux` | d'où vient le décor (défaut : `studio`) |
 | `--max-kb 400` | budget de poids du JPEG exporté |
 | `--filename "quelle-taille-tapis-{room}-baba-rug"` | nommage SEO |
 | `--no-review` | désactive l'avis de scène (moins cher, moins sûr) |
+
+## D'où vient le décor
+
+| Mode | Coût/image | Ce que c'est |
+|---|---|---|
+| **`studio`** (défaut) | **0 €** | Décor fabriqué par le code : parquet point de Hongrie ou lames, travertin, béton ; caméra perspective réelle, lumière directionnelle. Aucune clé. Le plan du sol est **exact par construction**. Rendu « studio produit », pas un salon meublé. |
+| `library` | **0 €** | Vos photographies de pièces vides, calibrées une fois. Photoréalisme total. Voir [`scenes/README.md`](scenes/README.md). |
+| `gemini` / `flux` | ~0,13 $ / ~0,04 $ | Décors meublés générés à la demande. Variété infinie, coût récurrent, photoréalisme à vérifier. |
+
+Les trois passent par la même interface : changer de mode est un argument, pas une
+réécriture.
 
 ## Configuration
 

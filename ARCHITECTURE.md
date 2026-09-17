@@ -151,7 +151,23 @@ un mur de brique crème, et **les franges sont crème sur crème**. Aucun modèl
 `segmentation.mask_quality()` mesure ce contraste et refuse de continuer en silence.
 La vraie solution est un **fond de prise de vue contrastant** (voir PHASE 5).
 
-### Génération de décor → **Gemini 3 Pro Image** en principal, **FLUX.1 Kontext** en secours
+### Décor → **studio procédural** par défaut, bibliothèque de photos ensuite, génération en dernier
+
+Le décor est le seul poste qui coûte de l'argent, et c'est aussi celui qui porte
+le moins de risque produit. Trois sources, par ordre de préférence :
+
+**1. Studio procédural (`babarug/studio.py`), gratuit, sans clé.** Une caméra
+perspective réelle, un sol texturé en vue de dessus puis projeté par homographie,
+un fond, une lumière directionnelle. Deux avantages qui ne sont pas des détails :
+le plan du sol est **exact par construction** — nous posons la caméra, donc aucun
+modèle de vision n'a à deviner où poser le tapis — et le résultat est
+reproductible à la graine près. Limite assumée : c'est un fond de studio, pas un
+salon meublé.
+
+**2. Bibliothèque de photographies de pièces vides**, calibrées une fois. Coût nul,
+photoréalisme total puisque ce sont des photos. Limite : finitude du catalogue.
+
+**3. Génération (Gemini / FLUX)**, quand il faut des intérieurs meublés variés.
 
 | Modèle | Prix/image | Vitesse | Remarque |
 |---|---|---|---|

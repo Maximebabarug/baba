@@ -18,17 +18,31 @@ QuadPx = np.ndarray  # (4,2) float32, ordre TL, TR, BR, BL, en pixels
 def order_quad(pts: np.ndarray) -> QuadPx:
     """Ordonne 4 points en TL, TR, BR, BL.
 
-    Methode : la somme x+y est minimale en haut-gauche et maximale en bas-droite ;
-    la difference y-x separe les deux autres. Robuste a la rotation moderee, ce
-    qui est le cas d'un tapis photographie a peu pres droit.
+    Tri angulaire autour du centroide, puis rotation pour demarrer sur le point
+    le plus haut a gauche. Robuste a toute forme convexe.
+
+    L'heuristique repandue -- somme x+y minimale en haut a gauche, maximale en
+    bas a droite -- parait equivalente et ne l'est pas : sur un trapeze large et
+    peu profond, typique d'un sol vu en perspective, le coin bas-gauche a un x
+    tres negatif et une somme plus petite que celle du coin haut-gauche. Deux
+    coins sont alors designes deux fois, le quad devient degenere et
+    l'homographie s'effondre en silence. Constate sur un sol de 3,4 m de large
+    pour 2,6 m de profondeur.
     """
     pts = np.asarray(pts, dtype=np.float32).reshape(4, 2)
-    s = pts.sum(axis=1)
-    d = np.diff(pts, axis=1).ravel()  # y - x
-    return np.array(
-        [pts[np.argmin(s)], pts[np.argmin(d)], pts[np.argmax(s)], pts[np.argmax(d)]],
-        dtype=np.float32,
-    )
+    c = pts.mean(axis=0)
+    ang = np.arctan2(pts[:, 1] - c[1], pts[:, 0] - c[0])
+    order = np.argsort(ang)
+    cyc = pts[order]
+
+    # Depart sur le coin le plus haut (et le plus a gauche en cas d'egalite).
+    start = int(np.lexsort((cyc[:, 0], cyc[:, 1]))[0])
+    cyc = np.roll(cyc, -start, axis=0)
+
+    # Sens de parcours : le second point doit etre a droite du premier.
+    if cyc[1, 0] < cyc[3, 0]:
+        cyc = cyc[[0, 3, 2, 1]]
+    return cyc.astype(np.float32)
 
 
 def quad_area(q: np.ndarray) -> float:

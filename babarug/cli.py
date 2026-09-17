@@ -169,7 +169,7 @@ def main(argv=None) -> int:
         sp.add_argument("--out", default="data")
         sp.add_argument("--vision", default=None)
         sp.add_argument("--generation", default=None,
-                        help="library (decors reels, gratuit) | gemini | flux | offline")
+                        help="studio (par defaut, gratuit) | library | gemini | flux | offline")
         sp.add_argument("--scenes", default="scenes", help="dossier de la bibliotheque de decors")
         sp.add_argument("--segmentation", default=None, help="local | remote")
         sp.add_argument("--style", nargs="*", default=None)

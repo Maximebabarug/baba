@@ -20,12 +20,14 @@ def _lazy():
         FluxKontextProvider, GeminiImageProvider, OfflineSceneProvider,
     )
     from babarug.providers.scene_library import SceneLibraryProvider
+    from babarug.providers.studio_provider import StudioProvider
     from babarug.providers.segmentation import LocalGrabCutProvider, RemoteMattingProvider
     from babarug.providers.vision_claude import ClaudeVisionProvider
 
     _VISION.update(claude=ClaudeVisionProvider)
     _GENERATION.update(gemini=GeminiImageProvider, flux=FluxKontextProvider,
-                       library=SceneLibraryProvider, offline=OfflineSceneProvider)
+                       library=SceneLibraryProvider, studio=StudioProvider,
+                       offline=OfflineSceneProvider)
     _SEGMENTATION.update(local=LocalGrabCutProvider, remote=RemoteMattingProvider)
 
 
@@ -39,7 +41,7 @@ def get_vision(name: str | None = None, **kw):
 
 def get_generation(name: str | None = None, **kw):
     _lazy()
-    name = name or os.environ.get("BABARUG_GENERATION", "offline")
+    name = name or os.environ.get("BABARUG_GENERATION", "studio")
     if name not in _GENERATION:
         raise ProviderError(f"ImageGenerationProvider inconnu : {name} (dispo : {list(_GENERATION)})")
     return _GENERATION[name](**kw)
