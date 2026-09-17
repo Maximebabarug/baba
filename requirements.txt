@@ -1,0 +1,19 @@
+# --- coeur pipeline image (obligatoire) ---
+numpy>=2.0
+opencv-python-headless>=4.10
+pillow>=10.0
+scikit-image>=0.24
+scipy>=1.13
+
+# --- modeles / API ---
+anthropic>=1.6          # VisionProvider + QualityControlProvider
+requests>=2.31          # providers HTTP (Gemini / BFL / SAM)
+
+# --- app ---
+pydantic>=2.7
+fastapi>=0.111
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9 # upload drag & drop
+
+# --- dev ---
+pytest>=8.0
