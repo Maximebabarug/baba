@@ -238,22 +238,34 @@ def _match_scale(plate_rgba: np.ndarray, recovered: np.ndarray, rug_quad) -> tup
 def _normalize_shading(original: np.ndarray, recovered: np.ndarray, mask: np.ndarray):
     """Annule l'eclairage de la piece avant de comparer les couleurs.
 
-    Le relighting est VOULU : un tapis doit recevoir la lumiere de la scene. Si
-    on ne le neutralise pas, le dE mesure l'eclairage et non une derive produit,
-    et le controle devient inexploitable. On divise par le champ lumineux basse
-    frequence estime entre les deux images ; toute derive qui survit est une
-    vraie alteration de teinte ou de motif.
+    Le relighting est VOULU : un tapis doit recevoir la lumiere de la scene. Sans
+    le neutraliser, le dE mesure l'eclairage et non une derive produit.
 
-    Retourne (recovered_corrige, intensite_du_champ) -- l'intensite est
-    rapportee a part, car un relighting trop violent reste un defaut visuel.
+    Deux precautions, toutes deux apprises a leurs depens :
+      - le flou est MASQUE (on divise la somme ponderee par le poids) : un flou
+        ordinaire fait deborder le sol environnant dans le champ d'eclairage du
+        tapis et injecte une erreur qui n'existe pas ;
+      - le rayon est proportionnel a la taille du TAPIS, pas de l'image. Un rayon
+        calcule sur une scene en 1600x900 valait 163 px pour un tapis large de
+        260 px : le champ estime n'avait plus rien a voir avec lui, et le dE
+        mesure restait a 5.5 sur un compositing pourtant strictement identique
+        a sa reference.
     """
+    m = (mask > 127).astype(np.float32)
+    if m.sum() < 64:
+        return recovered, 0.0
     lo = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY).astype(np.float32) + 1.0
     lr = cv2.cvtColor(recovered, cv2.COLOR_BGR2GRAY).astype(np.float32) + 1.0
-    r = max(15, (int(min(original.shape[:2]) * 0.18) // 2) * 2 + 1)
-    field = cv2.GaussianBlur(lr, (r, r), 0) / cv2.GaussianBlur(lo, (r, r), 0)
-    field = np.clip(field, 0.4, 2.5)
-    m = mask > 127
-    strength = float(np.abs(field[m] - 1.0).mean()) if m.any() else 0.0
+
+    r = max(9, (int(np.sqrt(float(m.sum())) * 0.25) // 2) * 2 + 1)
+    w = cv2.GaussianBlur(m, (r, r), 0)
+    num = cv2.GaussianBlur(lr * m, (r, r), 0)
+    den = cv2.GaussianBlur(lo * m, (r, r), 0)
+    ok = w > 1e-3
+    field = np.ones_like(lo)
+    field[ok] = np.clip(num[ok] / np.maximum(den[ok], 1e-3), 0.4, 2.5)
+
+    strength = float(np.abs(field[m > 0.5] - 1.0).mean())
     corrected = np.clip(recovered.astype(np.float32) / field[..., None], 0, 255).astype(np.uint8)
     return corrected, strength
 
@@ -271,31 +283,47 @@ def measure_fidelity(
 ) -> tuple[FidelityMetrics, list[str]]:
     """Compare le tapis rendu au tapis reel. Aucun appel modele.
 
-    Chaine : re-extraction par homographie inverse -> mise a l'echelle reelle
-    de livraison -> neutralisation de l'eclairage -> metriques.
+    La comparaison se fait EN ESPACE-SCENE : on projette la plate d'origine dans
+    le quad du sol -- exactement la transformation qu'applique le compositing --
+    et on compare cette reference au rendu final, la ou le tapis se trouve.
+
+    Une premiere version ramenait au contraire le rendu dans l'espace de la
+    plate par homographie inverse. C'etait biaise : le tapis n'occupant que ~16 %
+    de l'echelle de la plate dans une vue large, le rendu subissait un
+    reechantillonnage aller-retour que l'original ne subissait pas. On mesurait
+    alors une perte de resolution parfaitement normale comme une infidelite, et
+    des images correctes etaient rejetees. En espace-scene les deux images ont la
+    meme histoire de reechantillonnage : l'ecart qui subsiste est reel.
     """
     th = thresholds or QCThresholds()
     notes: list[str] = []
+    h, w = final_bgr.shape[:2]
 
-    recovered_full = recover_plate(final_bgr, H_plate_to_scene, plate.size)
-    original, recovered, alpha, scale = _match_scale(plate.rgba, recovered_full, rug_quad)
+    expected = cv2.warpPerspective(plate.rgba, H_plate_to_scene, (w, h),
+                                   flags=cv2.INTER_CUBIC, borderValue=(0, 0, 0, 0))
+    original = expected[:, :, :3]
+    alpha = expected[:, :, 3]
 
-    # On ecarte une bande au bord : feather et ombre y melangent legitimement
-    # tapis et sol, ce n'est pas une infidelite de motif.
-    ksz = max(3, (int(min(alpha.shape) * 0.012) // 2) * 2 + 1)
+    # On ecarte une bande au bord : feather, ombre et liseré de contact y
+    # melangent legitimement tapis et sol.
+    ksz = max(3, (int(np.sqrt((alpha > 127).sum()) * 0.02) // 2) * 2 + 1)
     core = cv2.erode(alpha, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ksz, ksz)))
     if (core > 127).sum() < 256:
         core = alpha
+    if (core > 127).sum() < 64:
+        notes.append("tapis quasi absent du rendu : controle impossible")
+        return FidelityMetrics(delta_e_mean=99, delta_e_p95=99, ssim=0, keypoint_inlier_ratio=0,
+                               histogram_correlation=0, visible_fraction=0, scale_error=0,
+                               texture_retention=0, silhouette_iou=0), notes
 
-    recovered_flat, shading = _normalize_shading(original, recovered, core)
+    recovered_flat, shading = _normalize_shading(original, final_bgr, core)
     if shading > 0.28:
         notes.append(f"relighting tres marque ({shading:.0%}) : verifier que le tapis "
                      "n'est pas delave ou assombri par la scene")
 
     de_mean, de_p95 = _delta_e(original, recovered_flat, core)
     ssim = _ssim(original, recovered_flat, core)
-    min_kp = max(12, int(th.min_keypoints * min(1.0, scale * 2)))
-    kp, measurable = _keypoint_ratio(original, recovered_flat, core, min_kp)
+    kp, measurable = _keypoint_ratio(original, recovered_flat, core, th.min_keypoints)
     if not measurable:
         notes.append(
             "fidelite du motif non mesurable (tapis trop uni, ou rendu trop petit) "
@@ -311,11 +339,17 @@ def measure_fidelity(
         else 0.0
     )
 
-    if scale < 0.22:
-        notes.append(
-            f"le tapis n'occupe que {scale:.0%} de la resolution de la plate : "
-            "cadrage trop large, le motif sera peu lisible sur la fiche produit"
-        )
+    # Lisibilite du produit : independante de la fidelite, mais decisive pour une
+    # fiche e-commerce. Un tapis fidele mais minuscule ne montre pas le produit.
+    if rug_quad is not None:
+        from babarug.geometry import quad_area
+
+        occupe = quad_area(rug_quad) / float(w * h)
+        if occupe < 0.10:
+            notes.append(
+                f"le tapis n'occupe que {occupe:.1%} de l'image : cadrage trop large, "
+                "le motif sera peu lisible sur la fiche produit"
+            )
 
     return (
         FidelityMetrics(

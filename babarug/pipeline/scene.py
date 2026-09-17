@@ -69,3 +69,34 @@ def generate_scene(
         warnings.append(f"confiance faible sur le plan du sol ({est.confidence:.2f})")
 
     return scene, FloorPlane(quad_px, est.width_m, est.depth_m), warnings
+
+
+def zoom_scene(
+    scene_bgr: np.ndarray, floor: FloorPlane, focus: np.ndarray, factor: float
+) -> tuple[np.ndarray, FloorPlane]:
+    """Rapproche la camera : recadre la scene autour du tapis, puis reechantillonne.
+
+    C'est le bon geste quand le tapis est fidele mais trop petit dans l'image.
+    Agrandir le tapis serait mentir sur le produit : un 170x133 doit occuper la
+    place d'un 170x133 dans la piece. Un photographe, lui, se rapproche -- c'est
+    exactement ce que fait cette fonction.
+
+    Le quad du sol est transporte dans le nouveau repere : l'oublier ferait poser
+    le tapis a cote de la zone prevue.
+    """
+    h, w = scene_bgr.shape[:2]
+    factor = float(np.clip(factor, 1.0, 3.0))
+    cw, ch = w / factor, h / factor
+
+    cx, cy = np.asarray(focus, dtype=np.float64).reshape(4, 2).mean(axis=0)
+    x0 = float(np.clip(cx - cw / 2, 0, w - cw))
+    # On laisse un peu plus d'air au-dessus du tapis qu'en dessous : le regard
+    # doit voir le mobilier derriere, pas seulement du sol.
+    y0 = float(np.clip(cy - ch * 0.58, 0, h - ch))
+
+    crop = scene_bgr[int(y0):int(y0 + ch), int(x0):int(x0 + cw)]
+    out = cv2.resize(crop, (w, h), interpolation=cv2.INTER_CUBIC)
+
+    q = np.asarray(floor.quad, dtype=np.float32).reshape(4, 2)
+    moved = np.column_stack([(q[:, 0] - x0) * (w / cw), (q[:, 1] - y0) * (h / ch)])
+    return out, FloorPlane(moved.astype(np.float32), floor.width_m, floor.depth_m)

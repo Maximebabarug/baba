@@ -36,7 +36,19 @@ class CompositeOptions:
     shadow_offset: tuple[int, int] = (0, 6)
     contact_darkening: float = 0.25  # assombrissement du liseré au contact du sol
     match_grain: bool = True
-    match_blur: bool = True
+    match_blur: bool = False
+    """Accord de nettete : DESACTIVE par defaut, volontairement.
+
+    L'idee est seduisante -- adoucir un tapis trop net pour une scene plus
+    douce -- mais l'operation est mal posee et dangereuse. La nettete estimee
+    depend de la resolution ET du contenu, un tapis d'Orient projete en petit
+    genere beaucoup d'energie haute frequence par repliement, et le rapport
+    calcule s'envole. Mesure sur BABA-RUG-0001 dans une scene 1600x900 : la
+    texture conservee tombait a 26 % et l'ecart colorimetrique montait a 12.3,
+    contre 91 % et 5.9 sans cette etape. Comme la priorite du projet est la
+    fidelite avant l'esthetique, l'etape ne s'active que sur demande explicite,
+    et le controle qualite mesure ce qu'elle coute.
+    """
     edge_feather_px: float = 0.8
 
 
@@ -62,9 +74,21 @@ def _estimate_noise_sigma(img: np.ndarray) -> float:
     return float(np.abs(conv).mean() * np.sqrt(0.5 * np.pi) / 6.0)
 
 
-def _estimate_blur(img: np.ndarray) -> float:
-    """Variance du laplacien : eleve = net, bas = flou."""
-    return float(cv2.Laplacian(_luma(img), cv2.CV_32F).var())
+def _estimate_blur(img: np.ndarray, mask: np.ndarray | None = None) -> float:
+    """Variance du laplacien : eleve = net, bas = flou.
+
+    `mask` restreint la mesure a une zone. C'est indispensable : comparer la
+    nettete de deux images de RESOLUTIONS ou de CONTENUS differents n'a aucun
+    sens. Mesurer la plate pleine resolution (variance 1793) contre une scene
+    en 1600x900 (variance 139) donnait un rapport de 12.9 et faisait appliquer
+    un flou de sigma 0.9 au tapis, detruisant 74 % de sa texture. Les deux
+    mesures doivent etre prises dans la meme image, a la meme echelle.
+    """
+    lap = cv2.Laplacian(_luma(img), cv2.CV_32F)
+    if mask is None:
+        return float(lap.var())
+    m = mask > 127
+    return float(lap[m].var()) if m.sum() > 64 else 0.0
 
 
 def _shading_field(scene: np.ndarray, rug_alpha: np.ndarray) -> np.ndarray:
@@ -153,10 +177,15 @@ def composite_rug(
 
     # 4. Coherence optique.
     if opt.match_blur:
-        scene_sharp = _estimate_blur(scene_bgr)
-        rug_sharp = _estimate_blur(plate.rgba[:, :, :3])
-        if rug_sharp > scene_sharp * 1.6 and scene_sharp > 0:
-            sigma = float(np.clip(np.sqrt(rug_sharp / max(scene_sharp, 1e-6)) * 0.25, 0.3, 1.6))
+        # Les deux nettetes sont mesurees DANS LA SCENE, a la meme resolution :
+        # le tapis deja projete d'un cote, le sol qui l'entoure de l'autre.
+        rug_here = (rug_a * 255).astype(np.uint8)
+        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (41, 41))
+        around = cv2.subtract(cv2.dilate(rug_here, k), rug_here)
+        scene_sharp = _estimate_blur(scene_bgr, around)
+        rug_sharp = _estimate_blur(rug_bgr.astype(np.uint8), rug_here)
+        if scene_sharp > 1e-6 and rug_sharp > scene_sharp * 2.5:
+            sigma = float(np.clip(np.sqrt(rug_sharp / scene_sharp) * 0.12, 0.25, 0.7))
             rug_lit = cv2.GaussianBlur(rug_lit, (0, 0), sigma)
     if opt.match_grain:
         sigma = _estimate_noise_sigma(scene_bgr)

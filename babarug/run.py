@@ -31,6 +31,7 @@ PHOTO_EXT = {".jpg", ".jpeg", ".png", ".webp"}
 @dataclass
 class RunConfig:
     out_root: Path = Path("data")
+    scenes_folder: str = "scenes"
     vision: str | None = None
     generation: str | None = None
     segmentation: str | None = None
@@ -75,8 +76,29 @@ def run_product(
     out_dir = cfg.out_root / product_id
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    vision = get_vision(cfg.vision)
-    gen = get_generation(cfg.generation)
+    # Le provider de vision n'est construit QUE s'il sert : analyser des photos,
+    # situer un sol non calibre, ou donner un avis de scene. Avec un RUG DNA
+    # deja etabli et une bibliotheque de decors calibres, la chaine complete
+    # tourne sans aucune cle d'API -- et l'instancier d'office la cassait.
+    _vision_cache: list = []
+
+    def vision_lazy():
+        if not _vision_cache:
+            _vision_cache.append(get_vision(cfg.vision))
+        return _vision_cache[0]
+
+    class _LazyVision:
+        """Fait patienter la construction jusqu'au premier appel reel."""
+
+        def __getattr__(self, name):
+            return getattr(vision_lazy(), name)
+
+        @property
+        def costs(self):
+            return _vision_cache[0].costs if _vision_cache else []
+
+    vision = _LazyVision()
+    gen = get_generation(cfg.generation, folder=cfg.scenes_folder, product_id=product_id)
     seg = get_segmentation(cfg.segmentation)
 
     # ---------------------------------------------------------------- 1. DNA
@@ -87,7 +109,7 @@ def run_product(
         dna = RugDNA.model_validate(json.loads(dna_path.read_text()))
         step(f"    RUG DNA reutilise ({dna.n_photos} photos)")
     else:
-        dna = vision.analyze_rug(product_id, photos, declared_size_cm)
+        dna = vision_lazy().analyze_rug(product_id, photos, declared_size_cm)
         dna_path.write_text(dna.model_dump_json(indent=2))
     rep.dna = dna
     if dna.needs_human_check:
@@ -177,7 +199,7 @@ def run_product(
 
     step("6/6 termine")
     rep.cost_usd = round(
-        sum(c.usd for p in (vision, gen, seg) for c in getattr(p, "costs", [])), 4
+        sum(c.usd for p in (_vision_cache + [gen, seg]) for c in getattr(p, "costs", [])), 4
     )
     rep.seconds = round(time.time() - t0, 1)
     if any(r.qc.verdict != Verdict.APPROVED for r in rep.results):

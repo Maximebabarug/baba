@@ -20,7 +20,7 @@ from babarug.models import QCReport, RenderResult, RugDNA, SceneBrief, Verdict
 from babarug.pipeline.composite import CompositeOptions, composite_rug
 from babarug.pipeline.plate import Plate
 from babarug.pipeline.qc import QCThresholds, decide, measure_fidelity
-from babarug.pipeline.scene import generate_scene
+from babarug.pipeline.scene import generate_scene, zoom_scene
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +45,7 @@ class _State:
     center_v: float
     seed: int
     relight: float
+    zoom: float = 1.0
     regenerate_scene: bool = False
     reason: str = ""
 
@@ -59,12 +60,18 @@ def _plan_correction(report: QCReport, st: _State, settings: RenderSettings) -> 
     f = " ".join(report.failures).lower()
     new = _State(st.fill, st.center_v, st.seed, st.relight)
 
-    if "cadrage trop large" in f:
-        # Le tapis est fidele mais trop petit dans le cadre : on le rapproche
-        # au lieu de regenerer la piece. Regenerer ici ne corrigerait rien.
-        new.fill = min(0.92, st.fill + 0.10)
-        new.center_v = float(np.clip(st.center_v + 0.04, 0.35, 0.78))
-        new.reason = "tapis trop petit dans le cadre : on augmente son emprise au sol"
+    if "cadrage trop large" in f or "n'occupe que" in f:
+        # Le tapis est fidele mais trop petit dans l'image. On RAPPROCHE LA
+        # CAMERA. Augmenter son emprise au sol serait inutile et malhonnete :
+        # `fit_rug_quad` ne fait que brider un tapis trop grand pour la zone, il
+        # ne l'agrandit jamais au-dela de ses dimensions reelles. Une premiere
+        # version poussait `fill` a chaque iteration et ne changeait donc
+        # strictement rien -- trois tours de boucle pour rien.
+        if st.zoom >= 2.6:
+            return None
+        new.zoom = min(2.6, st.zoom * 1.35)
+        new.reason = (f"tapis trop petit dans l'image : on rapproche la camera "
+                      f"(zoom x{new.zoom:.2f})")
         return new
     if "hors cadre" in f or "entierement visible" in f:
         new.fill = max(0.55, st.fill - 0.12)
@@ -133,15 +140,24 @@ def render_variant(
             warnings += w
             st.regenerate_scene = False
 
+        view, view_floor = scene, floor
+        if st.zoom > 1.001:
+            provisoire = fit_rug_quad(
+                floor, plate.aspect_ratio, real_size_cm=dna.real_size_cm,
+                fill=st.fill, center_v=st.center_v,
+            )
+            view, view_floor = zoom_scene(scene, floor, provisoire, st.zoom)
+
         quad = fit_rug_quad(
-            floor, plate.aspect_ratio, real_size_cm=dna.real_size_cm,
+            view_floor, plate.aspect_ratio, real_size_cm=dna.real_size_cm,
             fill=st.fill, center_v=st.center_v,
         )
         opts = CompositeOptions(**{**s.composite.__dict__, "relight_strength": st.relight})
-        comp = composite_rug(scene, plate, quad, opts)
+        comp = composite_rug(view, plate, quad, opts)
 
         metrics, notes = measure_fidelity(
-            plate, comp.image, comp.H_plate_to_scene, quad, floor, comp.rug_alpha, s.thresholds
+            plate, comp.image, comp.H_plate_to_scene, quad, view_floor,
+            comp.rug_alpha, s.thresholds
         )
 
         review = None

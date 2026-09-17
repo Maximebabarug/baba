@@ -30,7 +30,8 @@ def _cfg(a) -> RunConfig:
         styles = [tuple(s.split("/")) for s in a.style] if "/" in a.style[0] else \
                  list(zip(a.style, a.room))
     return RunConfig(
-        out_root=Path(a.out), vision=a.vision, generation=a.generation,
+        out_root=Path(a.out), scenes_folder=getattr(a, "scenes", "scenes"),
+        vision=a.vision, generation=a.generation,
         segmentation=a.segmentation, styles=styles, max_kb=a.max_kb,
         filename_template=a.filename,
         settings=RenderSettings(width=a.width, height=a.height,
@@ -92,6 +93,38 @@ def cmd_dna(a) -> int:
     return 0
 
 
+def cmd_scenes(a) -> int:
+    """Inventaire et validation de la bibliotheque de decors."""
+    from babarug.scenes import SceneLibrary
+
+    lib = SceneLibrary(a.folder)
+    print(f"\n  Bibliotheque : {a.folder}\n")
+    if not len(lib) and not lib.problems:
+        print(f"    {YELLOW}vide{RESET}. Deposez des photos de pieces VIDES dans ce dossier,")
+        print(f"    puis calibrez chacune avec tools/calibrer-decor.html\n")
+        return 1
+    for sc in lib.scenes:
+        print(f"    {GREEN}ok{RESET}   {sc.scene_id:32} {sc.interior_style:24} "
+              f"{sc.room_type:16} {sc.floor_width_m:.1f}x{sc.floor_depth_m:.1f} m")
+    for sid, pbs in lib.problems.items():
+        print(f"    {RED}ko{RESET}   {sid}")
+        for pb in pbs:
+            print(f"           {DIM}{pb}{RESET}")
+
+    print(f"\n    {len(lib)} decor(s) utilisable(s), {len(lib.problems)} ecarte(s)")
+    if lib.scenes:
+        print(f"    styles : {', '.join(sorted(lib.styles()))}")
+        print(f"    pieces : {', '.join(sorted(lib.rooms()))}")
+        manque = [r for r in ('salon', 'salle_a_manger', 'chambre') if r not in lib.rooms()]
+        if manque:
+            print(f"    {YELLOW}!{RESET}  aucune piece de type : {', '.join(manque)}")
+        if len(lib) < 6:
+            print(f"    {YELLOW}!{RESET}  moins de 6 decors : les tapis se retrouveront souvent "
+                  f"dans les memes pieces")
+    print()
+    return 0 if lib.scenes else 1
+
+
 def cmd_doctor(a) -> int:
     from babarug.providers.registry import available
 
@@ -113,9 +146,17 @@ def cmd_doctor(a) -> int:
             print(f"    {GREEN}ok{RESET}   {label}  ({var})")
         else:
             print(f"    {YELLOW}--{RESET}   {label}  ({var} absent)")
+    from babarug.scenes import SceneLibrary
+
+    lib = SceneLibrary("scenes")
+    if len(lib):
+        print(f"    {GREEN}ok{RESET}   bibliotheque de decors : {len(lib)} piece(s), aucun cout")
+    else:
+        print(f"    {YELLOW}--{RESET}   bibliotheque de decors vide (dossier scenes/)")
+
     print(f"\n    providers : {available()}")
-    print(f"\n    Sans cle de generation, utilisez --generation offline :")
-    print(f"    {DIM}la chaine complete tourne, le decor est schematique.{RESET}\n")
+    print(f"\n    Sans aucune cle : --generation library (decors reels, cout nul)")
+    print(f"    {DIM}ou --generation offline pour un decor schematique de test.{RESET}\n")
     return 0 if ok else 1
 
 
@@ -127,7 +168,9 @@ def main(argv=None) -> int:
     def common(sp):
         sp.add_argument("--out", default="data")
         sp.add_argument("--vision", default=None)
-        sp.add_argument("--generation", default=None, help="gemini | flux | offline")
+        sp.add_argument("--generation", default=None,
+                        help="library (decors reels, gratuit) | gemini | flux | offline")
+        sp.add_argument("--scenes", default="scenes", help="dossier de la bibliotheque de decors")
         sp.add_argument("--segmentation", default=None, help="local | remote")
         sp.add_argument("--style", nargs="*", default=None)
         sp.add_argument("--room", nargs="*", default=None)
@@ -159,6 +202,10 @@ def main(argv=None) -> int:
     d.add_argument("--out", default="data")
     d.add_argument("--vision", default=None)
     d.set_defaults(func=cmd_dna)
+
+    sc = sub.add_parser("scenes", help="inventaire de la bibliotheque de decors")
+    sc.add_argument("--folder", default="scenes")
+    sc.set_defaults(func=cmd_scenes)
 
     doc = sub.add_parser("doctor", help="verifie l'installation")
     doc.set_defaults(func=cmd_doctor)

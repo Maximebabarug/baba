@@ -65,7 +65,8 @@ class GeminiImageProvider(CostTracker):
     # Le message d'erreur parle de quota depasse, ce qui laisse croire a une
     # limite temporaire : ce n'en est pas une, aucune attente ne la levera.
 
-    def __init__(self, api_key: str | None = None, model: str | None = None, timeout: int = 120):
+    def __init__(self, api_key: str | None = None, model: str | None = None,
+                 timeout: int = 120, **_):
         super().__init__()
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
         self.model = model or os.environ.get("BABARUG_GEMINI_MODEL", "gemini-3-pro-image")
@@ -119,7 +120,7 @@ class FluxKontextProvider(CostTracker):
     PRICE_PER_IMAGE = 0.04
 
     def __init__(self, api_key: str | None = None, endpoint: str = "flux-kontext-pro",
-                 timeout: int = 180):
+                 timeout: int = 180, **_):
         super().__init__()
         self.api_key = api_key or os.environ.get("BFL_API_KEY", "")
         self.endpoint = endpoint

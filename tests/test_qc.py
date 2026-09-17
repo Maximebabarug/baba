@@ -17,9 +17,13 @@ from synth import synth_rug
 
 
 def _rendre(room, floor, vraie_plate, plate_composee=None, quad=None):
-    """Compose `plate_composee` mais MESURE toujours contre `vraie_plate`."""
+    """Compose `plate_composee` mais MESURE toujours contre `vraie_plate`.
+
+    Le tapis est cadre genereusement : une image de fiche produit doit montrer
+    le tapis, et le controle qualite signale a juste titre un cadrage ou il
+    n'occupe qu'une poignee de pour cent de l'image."""
     quad = quad if quad is not None else fit_rug_quad(
-        floor, vraie_plate.aspect_ratio, real_size_cm=(230, 148)
+        floor, vraie_plate.aspect_ratio, real_size_cm=(300, 193), fill=0.98
     )
     res = composite_rug(room, plate_composee or vraie_plate, quad, CompositeOptions())
     m, notes = measure_fidelity(
@@ -100,7 +104,8 @@ def test_des_proportions_deformees_sont_rejetees(plate, room):
 
 def test_un_tapis_hors_cadre_est_rejete(plate, room):
     img, floor = room
-    q = fit_rug_quad(floor, plate.aspect_ratio, real_size_cm=(230, 148)) + np.float32([[0, 330]] * 4)
+    q = fit_rug_quad(floor, plate.aspect_ratio, real_size_cm=(300, 193), fill=0.98) \
+        + np.float32([[0, 330]] * 4)
     r = _rendre(img, floor, plate, quad=q)
     assert r.verdict == Verdict.REJECTED
     assert r.fidelity.visible_fraction < 0.90
@@ -110,7 +115,7 @@ def test_un_avis_de_scene_ne_peut_pas_repecher_un_echec_de_fidelite(plate, room)
     """Regle cardinale : un score d'IA n'est jamais une preuve."""
     img, floor = room
     autre = cv2.resize(synth_rug(seed=99), plate.size)
-    quad = fit_rug_quad(floor, plate.aspect_ratio, real_size_cm=(230, 148))
+    quad = fit_rug_quad(floor, plate.aspect_ratio, real_size_cm=(300, 193), fill=0.98)
     res = composite_rug(img, _variante(plate, bgr=autre), quad, CompositeOptions())
     m, notes = measure_fidelity(plate, res.image, res.H_plate_to_scene, quad, floor, res.rug_alpha)
     parfait = SceneReview(scene_realism=100, perspective=100, composition=100, integration=100,
@@ -120,7 +125,7 @@ def test_un_avis_de_scene_ne_peut_pas_repecher_un_echec_de_fidelite(plate, room)
 
 def test_un_avis_de_scene_peut_degrader_une_image_fidele(plate, room):
     img, floor = room
-    quad = fit_rug_quad(floor, plate.aspect_ratio, real_size_cm=(230, 148))
+    quad = fit_rug_quad(floor, plate.aspect_ratio, real_size_cm=(300, 193), fill=0.98)
     res = composite_rug(img, plate, quad, CompositeOptions())
     m, notes = measure_fidelity(plate, res.image, res.H_plate_to_scene, quad, floor, res.rug_alpha)
     mauvais = SceneReview(scene_realism=90, perspective=90, composition=90, integration=90,

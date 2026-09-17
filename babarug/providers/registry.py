@@ -19,12 +19,13 @@ def _lazy():
     from babarug.providers.generation import (
         FluxKontextProvider, GeminiImageProvider, OfflineSceneProvider,
     )
+    from babarug.providers.scene_library import SceneLibraryProvider
     from babarug.providers.segmentation import LocalGrabCutProvider, RemoteMattingProvider
     from babarug.providers.vision_claude import ClaudeVisionProvider
 
     _VISION.update(claude=ClaudeVisionProvider)
     _GENERATION.update(gemini=GeminiImageProvider, flux=FluxKontextProvider,
-                       offline=OfflineSceneProvider)
+                       library=SceneLibraryProvider, offline=OfflineSceneProvider)
     _SEGMENTATION.update(local=LocalGrabCutProvider, remote=RemoteMattingProvider)
 
 

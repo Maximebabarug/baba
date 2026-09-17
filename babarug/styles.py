@@ -142,6 +142,8 @@ def build_brief(
         slug=f"{variant}_{style_key}_{room_key}",
         interior_style=st["prompt"],
         room_type=ROOM_TYPES[room_key],
+        style_key=style_key,
+        room_key=room_key,
         flooring=rng.choice(st["flooring"]),
         key_furniture=rng.sample(st["furniture"], n_furn),
         lighting=rng.choice(st["light"]),

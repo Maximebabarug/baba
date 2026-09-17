@@ -130,6 +130,8 @@ class SceneBrief(BaseModel):
     slug: str
     interior_style: str
     room_type: str
+    style_key: str = ""   # cle du catalogue, ex "parisien_contemporain"
+    room_key: str = ""    # cle du catalogue, ex "salon"
     flooring: str
     key_furniture: list[str]
     lighting: str

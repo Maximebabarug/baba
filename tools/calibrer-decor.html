@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calibrage decor</title>
+<style>
+  :root{--bg:#14140f;--panel:#1e1e18;--line:#33332a;--txt:#efece3;--dim:#a8a396;
+        --accent:#c0704a;--ok:#6d8f5e;--warn:#c9a227;--err:#b4544a;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+       font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  header{padding:18px 22px;border-bottom:1px solid var(--line)}
+  h1{margin:0;font-size:19px;font-weight:600;letter-spacing:.2px}
+  .sub{color:var(--dim);font-size:13.5px;margin-top:4px}
+  main{display:grid;grid-template-columns:1fr 340px;gap:18px;padding:18px 22px;align-items:start}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
+  #drop{border:2px dashed var(--line);border-radius:10px;padding:52px 20px;text-align:center;
+        color:var(--dim);cursor:pointer;background:var(--panel)}
+  #drop.on{border-color:var(--accent);color:var(--txt)}
+  #stage{position:relative;display:none;line-height:0;border-radius:10px;overflow:hidden;
+         background:#000;cursor:crosshair}
+  #stage img{width:100%;display:block}
+  #ov{position:absolute;inset:0;width:100%;height:100%}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim)}
+  ol{margin:0 0 4px;padding-left:19px;color:var(--dim);font-size:13.5px}
+  ol li{margin-bottom:5px}
+  ol li.done{color:var(--ok)}
+  ol li.now{color:var(--txt);font-weight:600}
+  label{display:block;margin:11px 0 4px;font-size:13px;color:var(--dim)}
+  input,select{width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--line);
+               background:#15150f;color:var(--txt);font:inherit;font-size:14px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  button{width:100%;margin-top:13px;padding:10px;border:0;border-radius:7px;background:var(--accent);
+         color:#160d07;font:inherit;font-weight:650;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--txt);font-weight:500}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  pre{background:#101009;border:1px solid var(--line);border-radius:7px;padding:11px;
+      font-size:12px;overflow:auto;max-height:230px;white-space:pre-wrap;color:#d6d2c6}
+  .msg{margin-top:9px;font-size:13px;padding:8px 10px;border-radius:6px;display:none}
+  .msg.err{display:block;background:rgba(180,84,74,.14);color:#e79a92;border:1px solid rgba(180,84,74,.4)}
+  .msg.ok{display:block;background:rgba(109,143,94,.14);color:#a9c79a;border:1px solid rgba(109,143,94,.4)}
+  .hint{color:var(--dim);font-size:12.5px;margin-top:9px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Calibrage d'un décor — Baba Rug Visual Studio</h1>
+  <div class="sub">Marquez la zone de sol dégagée où le tapis sera posé. Une fois par pièce, réutilisable indéfiniment.</div>
+</header>
+
+<main>
+  <div>
+    <div id="drop">Glissez ici la photo de la pièce vide — ou cliquez pour la choisir</div>
+    <div id="stage"><img id="photo" alt=""><svg id="ov" preserveAspectRatio="none"></svg></div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h2>Les 4 coins, dans cet ordre</h2>
+      <ol id="steps">
+        <li data-i="0">Fond gauche <span style="opacity:.7">(loin)</span></li>
+        <li data-i="1">Fond droit <span style="opacity:.7">(loin)</span></li>
+        <li data-i="2">Avant droit <span style="opacity:.7">(près de vous)</span></li>
+        <li data-i="3">Avant gauche <span style="opacity:.7">(près de vous)</span></li>
+      </ol>
+      <div class="hint">Le bord proche doit être plus large que le bord lointain — c'est la perspective. Vous pouvez redéplacer un point en le faisant glisser.</div>
+      <button class="ghost" id="reset">Recommencer</button>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Échelle réelle</h2>
+      <div class="row">
+        <div><label>Largeur (m)</label><input id="wm" type="number" step="0.1" value="4.0"></div>
+        <div><label>Profondeur (m)</label><input id="dm" type="number" step="0.1" value="3.0"></div>
+      </div>
+      <div class="hint">Repères utiles : une assise de canapé ≈ 2 m, une lame de parquet ≈ 12 cm, une porte ≈ 2,05 m. À 15 % près, c'est suffisant.</div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Identité du décor</h2>
+      <label>Identifiant</label><input id="sid" placeholder="salon_parisien_01">
+      <label>Style</label>
+      <select id="style">
+        <option>parisien_contemporain</option><option>haussmannien</option>
+        <option>mediterraneen</option><option>maison_de_campagne</option>
+        <option>japandi</option><option>minimaliste</option><option>mid_century</option>
+        <option>vintage</option><option>industriel</option><option>boheme_chic</option>
+      </select>
+      <label>Pièce</label>
+      <select id="room">
+        <option>salon</option><option>salle_a_manger</option><option>chambre</option>
+        <option>bureau</option><option>entree</option>
+      </select>
+      <label>Sol</label><input id="floor" placeholder="parquet chêne point de Hongrie">
+      <label>Lumière</label><input id="light" placeholder="lumière naturelle de fin d'après-midi">
+      <button id="gen" disabled>Générer la fiche</button>
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <div class="panel" style="margin-top:14px" id="outPanel" hidden>
+      <h2>Fiche du décor</h2>
+      <pre id="out"></pre>
+      <button id="dl">Télécharger le .json</button>
+      <div class="hint">Placez ce fichier <b>et la photo</b> dans <code>scenes/</code>, avec le même nom de base.</div>
+    </div>
+  </div>
+</main>
+
+<script>
+const NAMES=["fond gauche","fond droit","avant droit","avant gauche"];
+let pts=[], drag=-1, fileName="";
+const $=id=>document.getElementById(id);
+const stage=$("stage"), photo=$("photo"), ov=$("ov");
+
+function loadFile(f){
+  if(!f||!f.type.startsWith("image/")) return;
+  fileName=f.name;
+  if(!$("sid").value) $("sid").value=f.name.replace(/\.[^.]+$/,"").replace(/[^a-z0-9]+/gi,"_").toLowerCase();
+  const r=new FileReader();
+  r.onload=e=>{photo.src=e.target.result; stage.style.display="block"; $("drop").style.display="none";
+               pts=[]; draw();};
+  r.readAsDataURL(f);
+}
+$("drop").onclick=()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";
+  i.onchange=e=>loadFile(e.target.files[0]);i.click();};
+["dragover","dragenter"].forEach(ev=>$("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.add("on");}));
+["dragleave","drop"].forEach(ev=>$("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.remove("on");}));
+$("drop").addEventListener("drop",e=>loadFile(e.dataTransfer.files[0]));
+
+function rel(e){const r=stage.getBoundingClientRect();
+  return [Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),
+          Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))];}
+
+stage.addEventListener("pointerdown",e=>{
+  const [x,y]=rel(e);
+  for(let i=0;i<pts.length;i++){
+    if(Math.hypot(pts[i][0]-x,pts[i][1]-y)<0.022){drag=i;stage.setPointerCapture(e.pointerId);return;}
+  }
+  if(pts.length<4){pts.push([x,y]);draw();}
+});
+stage.addEventListener("pointermove",e=>{if(drag<0)return;pts[drag]=rel(e);draw();});
+stage.addEventListener("pointerup",e=>{drag=-1;});
+
+function draw(){
+  ov.setAttribute("viewBox","0 0 1000 1000");
+  let s="";
+  if(pts.length>1){
+    const d=pts.map((p,i)=>(i?"L":"M")+(p[0]*1000)+" "+(p[1]*1000)).join(" ")+(pts.length===4?" Z":"");
+    s+=`<path d="${d}" fill="${pts.length===4?"rgba(192,112,74,.22)":"none"}"
+         stroke="#c0704a" stroke-width="3" vector-effect="non-scaling-stroke"/>`;
+  }
+  pts.forEach((p,i)=>{
+    s+=`<circle cx="${p[0]*1000}" cy="${p[1]*1000}" r="9" fill="#c0704a" stroke="#14140f" stroke-width="3"/>`;
+    s+=`<text x="${p[0]*1000+18}" y="${p[1]*1000+6}" fill="#efece3" font-size="26"
+         font-family="sans-serif">${i+1}</text>`;
+  });
+  ov.innerHTML=s;
+  [...$("steps").children].forEach((li,i)=>{
+    li.className = i<pts.length ? "done" : (i===pts.length ? "now" : "");
+  });
+  $("gen").disabled = pts.length!==4;
+}
+$("reset").onclick=()=>{pts=[];draw();};
+
+function checkGeom(){
+  const [tl,tr,br,bl]=pts, err=[];
+  const top=Math.hypot(tr[0]-tl[0],tr[1]-tl[1]), bot=Math.hypot(br[0]-bl[0],br[1]-bl[1]);
+  if(bot<top*0.98) err.push("Le bord proche est plus étroit que le bord lointain : perspective inversée. Vérifiez l'ordre des points.");
+  const cy=(tl[1]+tr[1]+br[1]+bl[1])/4;
+  if(cy<0.35) err.push("La zone est très haut dans l'image — est-ce bien du sol ?");
+  const cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const sg=[cross(tl,tr,br),cross(tr,br,bl),cross(br,bl,tl),cross(bl,tl,tr)].map(v=>v>0);
+  if(!(sg.every(v=>v)||sg.every(v=>!v))) err.push("Le quadrilatère se croise. Reprenez les points dans l'ordre indiqué.");
+  return err;
+}
+
+$("gen").onclick=()=>{
+  const err=checkGeom(), msg=$("msg");
+  if(err.length){msg.className="msg err";msg.textContent=err[0];return;}
+  msg.className="msg ok";msg.textContent="Géométrie cohérente.";
+  const j={scene_id:$("sid").value||"decor", image:fileName,
+    floor_norm:pts.map(p=>[+p[0].toFixed(5),+p[1].toFixed(5)]),
+    floor_width_m:parseFloat($("wm").value), floor_depth_m:parseFloat($("dm").value),
+    interior_style:$("style").value, room_type:$("room").value,
+    flooring:$("floor").value, lighting:$("light").value, notes:"", crop_margin:0.08, tags:[]};
+  $("out").textContent=JSON.stringify(j,null,2);
+  $("outPanel").hidden=false;
+  $("dl").onclick=()=>{
+    const b=new Blob([JSON.stringify(j,null,2)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(b);
+    a.download=(j.scene_id||"decor")+".json";a.click();};
+};
+</script>
+</body>
+</html>
