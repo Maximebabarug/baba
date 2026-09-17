@@ -57,10 +57,18 @@ class GeminiImageProvider(CostTracker):
     ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     PRICE_PER_IMAGE = 0.134
 
+    # ATTENTION : la generation d'IMAGES n'est PAS incluse dans le palier gratuit
+    # de l'API Gemini. Une cle valide, qui repond parfaitement sur les modeles de
+    # texte, renvoie malgre tout 429 sur tous les modeles image tant que la
+    # facturation n'est pas activee sur le projet Google Cloud associe. Le quota
+    # en cause est GenerateRequestsPerDayPerProjectPerModel-FreeTier, a zero.
+    # Le message d'erreur parle de quota depasse, ce qui laisse croire a une
+    # limite temporaire : ce n'en est pas une, aucune attente ne la levera.
+
     def __init__(self, api_key: str | None = None, model: str | None = None, timeout: int = 120):
         super().__init__()
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
-        self.model = model or os.environ.get("BABARUG_GEMINI_MODEL", "gemini-3-pro-image-preview")
+        self.model = model or os.environ.get("BABARUG_GEMINI_MODEL", "gemini-3-pro-image")
         self.timeout = timeout
         if not self.api_key:
             raise ProviderError("GEMINI_API_KEY absent")
@@ -79,6 +87,14 @@ class GeminiImageProvider(CostTracker):
             json=body,
             timeout=self.timeout,
         )
+        if r.status_code == 429 and "FreeTier" in r.text:
+            raise ProviderError(
+                "Gemini 429 : la generation d'images n'est pas disponible sur le palier "
+                "gratuit. Activez la facturation sur le projet Google Cloud lie a cette "
+                "cle (console.cloud.google.com/billing), puis reessayez. Attendre ne "
+                "changera rien : le quota journalier gratuit vaut zero pour les modeles "
+                "image."
+            )
         if r.status_code >= 400:
             raise ProviderError(f"Gemini {r.status_code}: {r.text[:300]}")
         try:
